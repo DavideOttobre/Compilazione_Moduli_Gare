@@ -2,8 +2,8 @@
 story_id: "1.1"
 title: "Setup Django Project"
 epic: "1 - Setup & User Management"
-status: "ready-for-dev"
-assigned_to: ""
+status: "done"
+assigned_to: "Amelia"
 created_at: "2026-04-05"
 updated_at: "2026-04-05"
 acceptance_criteria_ref: "epics.md - Story 1.1"
@@ -105,10 +105,82 @@ apps/
 - Nessuna. Questa è la prima story del progetto.
 
 ## Definizione di "Done"
-- [ ] Tutti i task completati
-- [ ] Struttura del progetto creata secondo le specifiche
-- [ ] Configurazione env funzionante
-- [ ] Logging configurato
-- [ ] Custom exceptions definite
-- [ ] `python manage.py check` passa senza errori
-- [ ] Commit effettuato con messaggio appropriato
+- [x] Tutti i task completati
+- [x] Struttura del progetto creata secondo le specifiche
+- [x] Configurazione env funzionante
+- [x] Logging configurato
+- [x] Custom exceptions definite
+- [x] `python manage.py check` passa senza errori
+- [x] Commit effettuato con messaggio appropriato
+
+---
+
+## Dev Agent Record
+
+### Amelia — Implementation Notes
+
+**Data:** 2026-04-05
+**Agent:** Amelia (bmad-dev)
+
+#### Decisioni tecniche
+- `python-decouple` scelto su `django-environ` per semplicità API e compatibilità con file `.env` non-standard
+- Helper `_get()` implementato per merge prioritizzato secrets.env > variables.env > default
+- `AppConfig` esplicito per ogni app (richiesto da Django 6.0.3 con INSTALLED_APPS puntati a sotto-moduli)
+- Logging: 2 file handler separati (INFO+ e WARNING+) per separare log operativi da errori
+- `AiTenderBaseError` base class aggiunta per catchabilità unificata di tutte le eccezioni custom
+- `LANGUAGE_CODE = 'it-it'`, `TIME_ZONE = 'Europe/Rome'` per localizzazione corretta
+
+#### Test creati
+- `tests/test_story_1_1.py` — 34 test, 4 classi:
+  - `TestModularStructure` (10 test) — AC-01
+  - `TestEnvironmentConfiguration` (6 test) — AC-02
+  - `TestLoggingConfiguration` (8 test) — AC-03
+  - `TestCustomExceptions` (10 test) — AC-04
+- Risultato: **34/34 PASSING**
+
+#### AC Traceability
+| AC | Codice | Test |
+|----|--------|------|
+| AC-01 struttura modulare | `INSTALLED_APPS` in `settings.py:79-92`, `apps/*/apps.py`, `core/` | `TestModularStructure` (10 test) |
+| AC-02 env vars | `settings.py:22-73` (`_get()`, `RepositoryEnv`) | `TestEnvironmentConfiguration` (6 test) |
+| AC-03 logging | `settings.py:168-282` (`LOGGING` dict, `LOG_DIR`) | `TestLoggingConfiguration` (8 test) |
+| AC-04 exceptions | `core/exceptions.py` (`DocumentParseError`, `FieldAnalysisError`, `CompilationError`) | `TestCustomExceptions` (10 test) |
+
+### File List
+| File | Azione |
+|------|--------|
+| `manage.py` | Creato (django-admin) |
+| `ai_tender/__init__.py` | Creato (django-admin) |
+| `ai_tender/settings.py` | Creato + configurato (env vars, logging, INSTALLED_APPS) |
+| `ai_tender/urls.py` | Creato (django-admin) |
+| `ai_tender/wsgi.py` | Creato (django-admin) |
+| `ai_tender/asgi.py` | Creato (django-admin) |
+| `core/__init__.py` | Creato |
+| `core/llm/__init__.py` | Creato |
+| `core/exceptions.py` | Creato (DocumentParseError, FieldAnalysisError, CompilationError) |
+| `apps/__init__.py` | Creato |
+| `apps/pipeline/__init__.py` | Creato |
+| `apps/pipeline/apps.py` | Creato (PipelineConfig) |
+| `apps/pipeline/models.py` | Creato (vuoto) |
+| `apps/pipeline/views.py` | Creato (vuoto) |
+| `apps/document_parser/__init__.py` | Creato |
+| `apps/document_parser/apps.py` | Creato (DocumentParserConfig) |
+| `apps/document_parser/models.py` | Creato (vuoto) |
+| `apps/document_parser/views.py` | Creato (vuoto) |
+| `apps/field_analyzer/__init__.py` | Creato |
+| `apps/field_analyzer/apps.py` | Creato (FieldAnalyzerConfig) |
+| `apps/field_analyzer/models.py` | Creato (vuoto) |
+| `apps/field_analyzer/views.py` | Creato (vuoto) |
+| `apps/questionnaire/__init__.py` | Creato |
+| `apps/questionnaire/apps.py` | Creato (QuestionnaireConfig) |
+| `apps/questionnaire/models.py` | Creato (vuoto) |
+| `apps/questionnaire/views.py` | Creato (vuoto) |
+| `apps/compiler/__init__.py` | Creato |
+| `apps/compiler/apps.py` | Creato (CompilerConfig) |
+| `apps/compiler/models.py` | Creato (vuoto) |
+| `apps/compiler/views.py` | Creato (vuoto) |
+| `tests/__init__.py` | Creato |
+| `tests/test_story_1_1.py` | Creato (34 test, 4 classi) |
+| `static/` | Creato (dir) |
+| `templates/` | Creato (dir) |
+| `logs/` | Creato auto (settings.py) |
