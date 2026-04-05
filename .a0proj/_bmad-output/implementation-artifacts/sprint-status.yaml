@@ -1,0 +1,77 @@
+# generated: 2026-04-05
+# project: ai_tender
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: implementation-artifacts/
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Mark epic as 'in-progress' when starting work on its first story
+# - SM typically creates next story ONLY after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then Dev runs code-review (fresh context, ideally different LLM)
+
+generated: 2026-04-05
+project: ai_tender
+project_key: NOKEY
+tracking_system: file-system
+story_location: implementation-artifacts/
+
+development_status:
+  epic-1: backlog
+  1-1-setup-django-project: ready-for-dev
+  1-2-registrazione-utente: backlog
+  1-3-login-session-management: backlog
+  1-4-creazione-profilo-aziendale: backlog
+  1-5-modifica-profilo-aziendale: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-upload-file-pdf-docx: backlog
+  2-2-parsing-pdf-nativo: backlog
+  2-3-ocr-pdf-scannerizzati: backlog
+  2-4-parsing-documenti-docx: backlog
+  2-5-analisi-llm-disciplinare: backlog
+  2-6-presentazione-checklist: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-upload-modulo-partecipazione: backlog
+  3-2-identificazione-campi-testo: backlog
+  3-3-identificazione-checkbox: backlog
+  3-4-identificazione-dropdown: backlog
+  3-5-gestione-campi-data: backlog
+  3-6-rilevamento-sezioni-nuove: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-distinzione-dati-oggettivi: backlog
+  4-2-generazione-questionario: backlog
+  4-3-gestione-scelte-campi: backlog
+  4-4-validazione-risposte: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-sostituzione-placeholder-profilo: backlog
+  5-2-sostituzione-placeholder-questionario: backlog
+  5-3-compilazione-checkbox: backlog
+  5-4-preservazione-layout: backlog
+  5-5-download-documento: backlog
+  epic-5-retrospective: optional
