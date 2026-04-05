@@ -88,8 +88,10 @@ INSTALLED_APPS = [
     'apps.document_parser',
     'apps.field_analyzer',
     'apps.questionnaire',
-    'apps.compiler',
+    'apps.accounts',
 ]
+# AC-01: Custom User Model
+AUTH_USER_MODEL = 'accounts.UserCustom'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
