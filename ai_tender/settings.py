@@ -282,3 +282,15 @@ LOGGING = {
         'level': 'WARNING',
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# SESSION CONFIGURATION (Story 1.3 - Task 3)
+# NFR7: Session timeout 30 minuti
+# ---------------------------------------------------------------------------
+SESSION_COOKIE_AGE = 1800  # 30 minuti in secondi
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_SECURE = False  # True in produzione con HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'

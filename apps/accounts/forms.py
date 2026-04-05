@@ -64,3 +64,34 @@ class RegistrationForm(forms.Form):
         if password and password_confirm and password != password_confirm:
             raise forms.ValidationError('Le password non corrispondono.')
         return password_confirm
+
+
+class LoginForm(forms.Form):
+    """
+    Form di login con email e password.
+
+    Satisfies: FR30 (autenticazione email/password), Task 1 Story 1.3
+    """
+    email = forms.EmailField(
+        label='Email',
+        max_length=254,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'inserisci la tua email'
+        }),
+        error_messages={
+            'required': 'L\'email è obbligatoria.',
+            'invalid': 'Inserisci un indirizzo email valido.'
+        }
+    )
+
+    password = forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'inserisci la password'
+        }),
+        error_messages={
+            'required': 'La password è obbligatoria.'
+        }
+    )

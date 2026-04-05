@@ -4,11 +4,12 @@
 
 import logging
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.views import View
 
-from .forms import RegistrationForm
+from .forms import RegistrationForm, LoginForm
 from .models import Tenant, UserCustom
 
 logger = logging.getLogger('apps.accounts')
@@ -24,12 +25,10 @@ class RegisterView(View):
     """
     template_name = 'accounts/register.html'
 
-    # AC-03: GET mostra form di registrazione
     def get(self, request):
         form = RegistrationForm()
         return render(request, self.template_name, {'form': form})
 
-    # AC-03: POST valida form, crea tenant + user, login automatico
     def post(self, request):
         form = RegistrationForm(request.POST)
 
@@ -38,11 +37,9 @@ class RegisterView(View):
             password = form.cleaned_data['password']
 
             try:
-                # AC-03: crea tenant associato all'utente
                 tenant = Tenant.objects.create(name=f'Azienda di {email}')
                 logger.info(f'Tenant creato: {tenant.name} (id={tenant.id})')
 
-                # AC-03: crea utente con tenant associato
                 user = UserCustom.objects.create_user(
                     email=email,
                     password=password,
@@ -50,28 +47,87 @@ class RegisterView(View):
                 )
                 logger.info(f'Utente registrato: {email} (tenant={tenant.name})')
 
-                # AC-04: login automatico dopo registrazione
                 login(request, user)
 
-                # AC-04: conferma registrazione e redirect a dashboard
                 messages.success(request, f'Registrazione completata con successo! Benvenuto, {email}.')
                 return redirect('accounts:dashboard')
 
             except Exception as e:
-                # AC-03: gestione errori con messaggi friendly in italiano
                 logger.error(f'Errore registrazione: {e}')
                 messages.error(request, 'Si è verificato un errore durante la registrazione. Riprova.')
                 return render(request, self.template_name, {'form': form})
 
-        # AC-03: form non valido — mostra errori
         return render(request, self.template_name, {'form': form})
 
 
-class DashboardView(View):
+class LoginView(View):
     """
-    Dashboard placeholder post-registrazione.
+    View per il login utente.
+    GET: mostra form di login
+    POST: autentica e crea sessione
+
+    Satisfies: FR30 (login email/password), Task 1 Story 1.3
+    """
+    template_name = 'accounts/login.html'
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('accounts:dashboard')
+        form = LoginForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = LoginForm(request.POST)
+
+        if form.is_valid():
+            email = form.cleaned_data['email'].lower().strip()
+            password = form.cleaned_data['password']
+
+            user = authenticate(request, username=email, password=password)
+
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    logger.info(f'Login effettuato: {email}')
+                    messages.success(request, f'Benvenuto, {email}!')
+                    next_url = request.GET.get('next', 'accounts:dashboard')
+                    return redirect(next_url)
+                else:
+                    logger.warning(f'Tentativo login account disattivato: {email}')
+                    messages.error(request, 'Credenziali non valide.')
+            else:
+                logger.warning(f'Tentativo login fallito: {email}')
+                messages.error(request, 'Credenziali non valide.')
+
+        return render(request, self.template_name, {'form': form})
+
+
+class LogoutView(View):
+    """
+    View per il logout utente.
+    Invalida la sessione corrente e redirect a login.
+
+    Satisfies: Task 2 Story 1.3
+    """
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            email = request.user.email
+            logout(request)
+            logger.info(f'Logout effettuato: {email}')
+            messages.success(request, 'Disconnessione effettuata con successo.')
+        return redirect('accounts:login')
+
+
+class DashboardView(LoginRequiredMixin, View):
+    """
+    Dashboard per utenti autenticati.
+    Richiede login (LoginRequiredMixin).
+
+    Satisfies: Task 6 Story 1.3 (protezione dashboard)
     """
     template_name = 'accounts/dashboard.html'
+    login_url = '/login/'  # URL per redirect se non autenticato
 
     def get(self, request):
         return render(request, self.template_name, {'user': request.user})
