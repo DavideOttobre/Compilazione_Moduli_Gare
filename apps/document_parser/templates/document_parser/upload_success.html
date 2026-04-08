@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Completato{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h4>✅ Documento Caricato</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <p><strong>File:</strong> {{ file_name }}</p>
+                        <p><strong>Dimensione:</strong> {{ file_size|filesizeformat }}</p>
+                        <p><strong>Tipo:</strong> {{ file_type }}</p>
+                        <p>Il documento è stato caricato con successo.</p>
+                    </div>
+                    <a href="{% url 'document_parser:upload_document' %}" class="btn btn-primary">Carica un Altro Documento</a>
+                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary">Torna alla Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

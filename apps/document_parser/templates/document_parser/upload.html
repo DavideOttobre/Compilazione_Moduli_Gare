@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Carica Documento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Carica Documento di Gara</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Carica il disciplinare di gara in formato PDF o DOCX per l'analisi.</p>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Errori:</strong>
+                            <ul class="mb-0">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label for="{{ form.file.id_for_label }}" class="form-label">Documento</label>
+                            {{ form.file }}
+                            <div class="form-text">{{ form.file.help_text }}</div>
+                            {% if form.file.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.file.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Carica Documento</button>
+                        <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary">Annulla</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
