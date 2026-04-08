@@ -95,3 +95,50 @@ class LoginForm(forms.Form):
             'required': 'La password è obbligatoria.'
         }
     )
+
+
+class CompanyProfileForm(forms.ModelForm):
+    """
+    Form per la creazione del profilo aziendale.
+
+    Satisfies: AC-1 (creazione profilo), AC-2 (validazione P.IVA)
+    FR25, FR26
+    """
+    # AC-1: fields for ragione_sociale, partita_iva, sede_legale
+    class Meta:
+        from .models import CompanyProfile
+        model = CompanyProfile
+        fields = ['ragione_sociale', 'partita_iva', 'sede_legale']
+        widgets = {
+            'ragione_sociale': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'es. Azienda S.r.l.'
+            }),
+            'partita_iva': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '12345678901 (11 cifre)'
+            }),
+            'sede_legale': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Via Roma 1, 00100 Roma (RM)'
+            }),
+        }
+        error_messages = {
+            'ragione_sociale': {
+                'required': 'La ragione sociale è obbligatoria.',
+            },
+            'partita_iva': {
+                'required': 'La partita IVA è obbligatoria.',
+            },
+            'sede_legale': {
+                'required': 'La sede legale è obbligatoria.',
+            },
+        }
+
+    # AC-2: validazione formato Partita IVA (11 cifre)
+    def clean_partita_iva(self):
+        partita_iva = self.cleaned_data.get('partita_iva', '').strip()
+        if not partita_iva.isdigit() or len(partita_iva) != 11:
+            raise forms.ValidationError('La partita IVA deve essere composta da 11 cifre numeriche.')
+        return partita_iva

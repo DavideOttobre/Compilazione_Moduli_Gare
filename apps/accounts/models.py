@@ -6,6 +6,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
+from encrypted_model_fields.fields import EncryptedCharField
 
 
 class Tenant(models.Model):
@@ -99,3 +100,49 @@ class UserCustom(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.first_name or self.email
+
+
+class CompanyProfile(models.Model):
+    """
+    Profilo aziendale dell'utente con dati sensibili criptati.
+
+    Satisfies: AC-1 (creazione profilo), AC-2 (cifratura P.IVA), AC-3 (associazione tenant)
+    FR25, FR26, NFR4, FR29, NFR6
+    """
+    # AC-1: user OneToOneField
+    user = models.OneToOneField(
+        UserCustom,
+        on_delete=models.CASCADE,
+        related_name='company_profile',
+        verbose_name='Utente'
+    )
+    # AC-3: tenant ForeignKey (auto from user)
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.CASCADE,
+        related_name='company_profiles',
+        verbose_name='Tenant'
+    )
+    # AC-1: ragione_sociale
+    ragione_sociale = models.CharField(max_length=255, verbose_name='Ragione Sociale')
+    # AC-2: partita_iva encrypted with AES-256
+    partita_iva = EncryptedCharField(max_length=255, verbose_name='Partita IVA')
+    # AC-1: sede_legale
+    sede_legale = models.TextField(verbose_name='Sede Legale')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Data Creazione')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Data Aggiornamento')
+
+    class Meta:
+        verbose_name = 'Profilo Aziendale'
+        verbose_name_plural = 'Profili Aziendali'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        # Task 1: __str__ method returns ragione_sociale
+        return self.ragione_sociale
+
+    def save(self, *args, **kwargs):
+        # Task 1: auto-set tenant from user if not provided
+        if not self.tenant_id and self.user and self.user.tenant_id:
+            self.tenant_id = self.user.tenant_id
+        super().save(*args, **kwargs)

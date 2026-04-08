@@ -70,7 +70,14 @@ DEBUG = _get('DJANGO_DEBUG', default='True') in ('True', 'true', '1', True)
 
 # AC-02: ALLOWED_HOSTS letto da variables.env
 _allowed_hosts_raw = _get('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1')
-ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()]
+
+# AC-02: FIELD_ENCRYPTION_KEY for encrypted model fields (NFR4)
+# Generate a key for development if not set in environment.
+# In production, this must be set in secrets.env.
+import base64
+import os
+_default_encryption_key = base64.urlsafe_b64encode(os.urandom(32)).decode()
+FIELD_ENCRYPTION_KEY = _get('FIELD_ENCRYPTION_KEY', default=_default_encryption_key)
 
 
 # ---------------------------------------------------------------------------

@@ -1,3 +1,5 @@
 Django==6.0.3
 python-decouple==3.8
 PyYAML==6.0.3
+cryptography==46.0.6
+django-encrypted-model-fields==0.6.5

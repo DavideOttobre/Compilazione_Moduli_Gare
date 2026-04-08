@@ -6,11 +6,12 @@ import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views import View
 
-from .forms import RegistrationForm, LoginForm
-from .models import Tenant, UserCustom
+from .forms import RegistrationForm, LoginForm, CompanyProfileForm
+from .models import Tenant, UserCustom, CompanyProfile
 
 logger = logging.getLogger('apps.accounts')
 
@@ -131,3 +132,65 @@ class DashboardView(LoginRequiredMixin, View):
 
     def get(self, request):
         return render(request, self.template_name, {'user': request.user})
+
+
+@login_required(login_url='/login/')
+def create_company_profile(request):
+    """
+    View per la creazione del profilo aziendale.
+    GET: mostra form vuoto (se utente autenticato e senza profilo)
+    POST: valida form e crea profilo
+
+    Satisfies: AC-1 (creazione profilo), Task 4 Story 1.4
+    """
+    # AC-1: e senza profilo esistente
+    # AC-1: redirect a edit se profilo esiste
+    if hasattr(request.user, 'company_profile'):
+        messages.info(request, 'Profilo aziendale già esistente.')
+        return redirect('accounts:edit_company_profile')
+    if request.method == 'POST':
+        form = CompanyProfileForm(request.POST)
+        if form.is_valid():
+            # AC-1: salva profilo
+            profile = form.save(commit=False)
+            profile.user = request.user
+            # AC-3: tenant from user
+            profile.tenant = request.user.tenant
+            profile.save()
+            logger.info(f'Profilo aziendale creato per {request.user.email}')
+            messages.success(request, 'Profilo aziendale creato con successo!')
+            return redirect('accounts:dashboard')
+    else:
+        form = CompanyProfileForm()
+
+    return render(request, 'accounts/create_profile.html', {'form': form})
+
+
+@login_required(login_url='/login/')
+def edit_company_profile(request):
+    """
+    View per la modifica del profilo aziendale.
+    GET: mostra form pre-compilato con dati attuali
+    POST: valida form e aggiorna profilo
+
+    Satisfies: AC-1 (modifica profilo), AC-2 (dati aggiornati), Task 1 Story 1.5
+    """
+    # AC-1: accesso solo utenti con profilo esistente
+    try:
+        profile = CompanyProfile.objects.get(user=request.user)
+    except CompanyProfile.DoesNotExist:
+        messages.info(request, 'Crea prima il tuo profilo aziendale.')
+        return redirect('accounts:create_company_profile')
+
+    if request.method == 'POST':
+        form = CompanyProfileForm(request.POST, instance=profile)
+        if form.is_valid():
+            # AC-1: salva modifiche
+            form.save()
+            logger.info(f'Profilo aziendale aggiornato per {request.user.email}')
+            messages.success(request, 'Profilo aziendale aggiornato con successo!')
+            return redirect('accounts:dashboard')
+    else:
+        form = CompanyProfileForm(instance=profile)
+
+    return render(request, 'accounts/edit_profile.html', {'form': form})
