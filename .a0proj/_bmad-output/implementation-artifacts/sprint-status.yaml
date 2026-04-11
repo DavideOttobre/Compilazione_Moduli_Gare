@@ -43,10 +43,10 @@ development_status:
   1-5-modifica-profilo-aziendale: done
 
   epic-2: in-progress
-  2-1-upload-file-pdf-docx: review
+  2-1-upload-file-pdf-docx: done
   2-2-parsing-pdf-nativo: done
-  2-4-parsing-documenti-docx: backlog
-  2-5-analisi-llm-disciplinare: backlog
+  2-4-parsing-documenti-docx: done
+  2-5-analisi-llm-disciplinare: ready-for-dev
   2-6-presentazione-checklist: backlog
   epic-2-retrospective: optional
 

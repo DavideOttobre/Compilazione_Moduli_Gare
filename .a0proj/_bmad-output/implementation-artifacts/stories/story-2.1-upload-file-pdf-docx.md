@@ -2,16 +2,16 @@
 story_id: "2.1"
 title: "Upload File PDF e DOCX"
 epic: "2 - Upload e Analisi Disciplinare di Gara"
-status: "review"
+status: "done"
 assigned_to: "Amelia"
 created_at: "2026-04-08"
-updated_at: "2026-04-08"
+updated_at: "2026-04-09"
 acceptance_criteria_ref: "epics.md - Story 2.1"
 ---
 
 # Story 2.1: Upload File PDF e DOCX
 
-Status: review
+Status: done
 
 ## Story
 
@@ -113,16 +113,32 @@ Amelia (bmad-dev) — BMAD Phase 4 Implementation
 - **Task 6 (Test):** Suite completa di 22 test tutti passanti: 9 model, 5 form, 8 view. Copertura totale degli AC.
 - **Admin:** Registrato `Document` in `admin.py` per pannello admin.
 
+### CR Fixes (2026-04-09)
+
+Code review avversariale ha identificato 5 issue (3 HIGH, 2 MEDIUM). Tutte risolte:
+
+- **CR Issue #1 (HIGH):** Aggiunta validazione dimensione massima file (50MB) in `DocumentUploadForm.clean_file()`
+- **CR Issue #2 (HIGH):** Fix bug logico content_type — check ora obbligatorio (`if not content_type or ...`)
+- **CR Issue #3 (HIGH):** Aggiunta validazione magic bytes (`%PDF` per PDF, `PK\x03\x04` per DOCX)
+- **CR Issue #4 (MEDIUM):** Rimosso scope creep Story 2.2 da views.py e urls.py (rimosso `parse_document` view e URL `parse/<int:pk>/`)
+- **CR Issue #5 (MEDIUM):** FileField `upload_to` ora usa `user_documents_path` per isolamento fisico per user_id
+- Aggiornato `file_size` da `IntegerField` a `PositiveIntegerField`
+- Generata migration `0003_cr_fixes_story_2_1.py`
+- Aggiunti 11 nuovi test di sicurezza (SecurityValidationTests)
+- Suite finale: 33/33 test passanti
+
 ### File List
 
-- `apps/document_parser/models.py` — Model Document
-- `apps/document_parser/forms.py` — DocumentUploadForm
-- `apps/document_parser/views.py` — upload_document view
-- `apps/document_parser/urls.py` — URL routing
+- `apps/document_parser/models.py` — Model Document (CR fix: upload_to user_id, PositiveIntegerField)
+- `apps/document_parser/forms.py` — DocumentUploadForm (CR fix: file_size, content_type, magic bytes)
+- `apps/document_parser/views.py` — upload_document + upload_success views (CR fix: removed Story 2.2 scope creep)
+- `apps/document_parser/urls.py` — URL routing (CR fix: removed parse/ URL)
 - `apps/document_parser/admin.py` — Admin registration per Document
 - `apps/document_parser/templates/document_parser/upload.html` — Template upload form
 - `apps/document_parser/templates/document_parser/upload_success.html` — Template conferma upload
 - `apps/document_parser/migrations/0001_initial.py` — Migration iniziale
+- `apps/document_parser/migrations/0003_cr_fixes_story_2_1.py` — Migration CR fixes
 - `ai_tender/urls.py` — Include document_parser URLs
-- `tests/test_story_2_1.py` — 22 test TDD per upload documento
-- `.a0proj/_bmad-output/implementation-artifacts/sprint-status.yaml` — Aggiornato status a 'review'
+- `tests/test_story_2_1.py` — 33 test TDD per upload documento (CR fix: +11 security tests)
+- `.a0proj/_bmad-output/implementation-artifacts/sprint-status.yaml` — Aggiornato status a 'done'
+- `.a0proj/_bmad-output/test-artifacts/review-story-2.1.md` — CR report

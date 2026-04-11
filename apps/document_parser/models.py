@@ -2,9 +2,19 @@
 # AC-1: Documento associato a tenant utente
 # AC-2: Conferma caricamento con nome file e dimensione
 # AC-3: Validazione formato solo PDF/DOCX
+# CR Fix #5: upload_to con user_id per isolamento fisico
 
 from django.db import models
 from django.conf import settings
+
+
+def user_documents_path(instance, filename):
+    """
+    Salva i documenti in documents/<user_id>/<filename>
+    per isolamento fisico per tenant.
+    FIX (CR Issue #5): Separazione fisica file per utente.
+    """
+    return f'documents/{instance.user_id}/{filename}'
 
 
 class Document(models.Model):
@@ -31,14 +41,14 @@ class Document(models.Model):
         related_name='documents',
         verbose_name='Utente'
     )
-    # AC-1: FileField con upload_to documents/
-    file = models.FileField(upload_to='documents/', verbose_name='File')
+    # AC-1: FileField con upload_to separato per user_id (CR Fix #5)
+    file = models.FileField(upload_to=user_documents_path, verbose_name='File')
     # AC-2: Nome originale del file
     original_name = models.CharField(max_length=255, verbose_name='Nome Originale')
     # AC-1/AC-3: Tipo file (pdf o docx)
     file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES, verbose_name='Tipo File')
-    # AC-2: Dimensione in bytes
-    file_size = models.IntegerField(verbose_name='Dimensione (bytes)')
+    # AC-2: Dimensione in bytes (CR Fix: PositiveIntegerField)
+    file_size = models.PositiveIntegerField(verbose_name='Dimensione (bytes)')
     # Auto timestamp upload
     uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name='Data Upload')
     # Stato elaborazione
@@ -49,6 +59,11 @@ class Document(models.Model):
         verbose_name='Stato'
     )
 
+    # Story 2.2: Parsing PDF Nativo - AC-1
+    parsed_content = models.TextField(
+        blank=True, null=True, verbose_name='Contenuto Estratto'
+    )
+
     class Meta:
         verbose_name = 'Documento'
         verbose_name_plural = 'Documenti'
@@ -56,8 +71,3 @@ class Document(models.Model):
 
     def __str__(self):
         return f'{self.original_name} ({self.file_type})'
-
-    # Story 2.2: Parsing PDF Nativo - AC-1
-    parsed_content = models.TextField(
-        blank=True, null=True, verbose_name='Contenuto Estratto'
-    )

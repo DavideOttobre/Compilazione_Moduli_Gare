@@ -2,6 +2,7 @@
 # AC-1: Upload documento PDF/DOCX associato a tenant utente
 # AC-2: Conferma caricamento con nome file e dimensione
 # AC-3: Validazione formato solo PDF/DOCX
+# CR Fix #4: Removed Story 2.2 scope creep (parse_document view)
 
 import os
 
@@ -12,6 +13,8 @@ from django.contrib import messages
 from apps.accounts.models import CompanyProfile
 from apps.document_parser.forms import DocumentUploadForm
 from apps.document_parser.models import Document
+from apps.document_parser.services import extract_text_from_docx
+from core.exceptions import DocumentParseError
 
 
 # AC-1: View per upload documento
@@ -71,65 +74,77 @@ def upload_success(request, pk):
     return render(request, 'document_parser/upload_success.html', context)
 
 
-# Story 2.2: Parsing PDF Nativo
-# AC-1: Estrazione testo da PDF nativo
-# AC-2: Parsing < 2 minuti (NFR1)
-# AC-3: Errore friendly in italiano su fallimento
-
-from django.http import HttpResponseBadRequest
-from core.exceptions import DocumentParseError
-from apps.document_parser.services import extract_text_from_pdf
+# Story 2.4: Parsing Documenti DOCX
+# AC-1: Estrazione testo da DOCX
+# AC-4: Errore friendly in italiano
+# AC-5: Solo file_type='docx' e status='uploaded'
+# AC-7: Status aggiornato a 'parsed' o 'error'
+# AC-8: Isolamento tenant
 
 
 @login_required(login_url='/login/')
-def parse_document(request, pk):
+def parse_docx_document(request, pk):
     """
-    Trigger parsing PDF per documento.
+    Parsing DOCX: estrae contenuto testuale dal documento DOCX.
 
-    Satisfies: AC-1 (estrazione testo), AC-3 (errore friendly)
-    Solo per documenti PDF con status='uploaded'.
+    Satisfies: AC-1 (parsing), AC-5 (check filetype/status), AC-7 (status update), AC-8 (tenant isolation)
     """
+    # AC-8: Isolamento tenant — solo documenti dell'utente autenticato
     try:
         doc = Document.objects.get(pk=pk, user=request.user)
     except Document.DoesNotExist:
         messages.error(request, 'Documento non trovato.')
         return redirect('document_parser:upload_document')
 
-    # AC-1: Solo documenti PDF
-    if doc.file_type != 'pdf':
-        return HttpResponseBadRequest(
-            'Il parsing PDF è disponibile solo per documenti in formato PDF.'
-        )
+    # AC-5: Accettare solo file_type='docx'
+    if doc.file_type != 'docx':
+        messages.error(request, 'Questo endpoint supporta solo documenti DOCX.')
+        return render(request, 'document_parser/parse_docx_result.html', {
+            'document': doc,
+            'success': False,
+            'error_message': 'Questo endpoint supporta solo documenti DOCX.',
+        }, status=400)
 
-    # AC-1: Solo documenti con status 'uploaded'
+    # AC-5: Accettare solo status='uploaded'
     if doc.status != 'uploaded':
-        return HttpResponseBadRequest(
-            'Questo documento è già stato analizzato o è in errore.'
-        )
+        messages.error(request, 'Questo documento è già stato analizzato.')
+        return render(request, 'document_parser/parse_docx_result.html', {
+            'document': doc,
+            'success': False,
+            'error_message': 'Questo documento è già stato analizzato.',
+        }, status=400)
 
-    context = {
-        'document': doc,
-        'success': False,
-        'error_message': None,
-        'parsed_content': None,
-    }
-
+    # AC-1: Esegui parsing DOCX
     try:
-        # AC-1: Estrai testo dal PDF
-        content = extract_text_from_pdf(doc)
-
-        # AC-1: Salva contenuto e aggiorna status
-        doc.parsed_content = content
+        parsed_text = extract_text_from_docx(doc)
+        # AC-7: Aggiorna status a 'parsed' e salva contenuto (AC-6)
         doc.status = 'parsed'
+        doc.parsed_content = parsed_text
         doc.save()
 
-        context['success'] = True
-        context['parsed_content'] = content
+        return render(request, 'document_parser/parse_docx_result.html', {
+            'document': doc,
+            'success': True,
+            'parsed_content': parsed_text,
+        })
 
-    except DocumentParseError as e:
-        # AC-3: Errore friendly in italiano
+    except Exception as e:
+        # AC-7: Aggiorna status a 'error' su fallimento
         doc.status = 'error'
         doc.save()
-        context['error_message'] = str(e)
 
-    return render(request, 'document_parser/parse_result.html', context)
+        # AC-4: Messaggio errore friendly in italiano
+        # H-1: isinstance invece di hasattr
+        if isinstance(e, DocumentParseError):
+            error_msg = e.user_message
+        else:
+            error_msg = (
+                'Impossibile leggere il documento. '
+                'Verifica che il file sia un DOCX valido e non sia danneggiato.'
+            )
+
+        return render(request, 'document_parser/parse_docx_result.html', {
+            'document': doc,
+            'success': False,
+            'error_message': error_msg,
+        })
