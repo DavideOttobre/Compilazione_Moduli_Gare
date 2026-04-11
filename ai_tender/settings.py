@@ -13,26 +13,21 @@ from decouple import Config, RepositoryEnv
 # ---------------------------------------------------------------------------
 # PATHS
 # ---------------------------------------------------------------------------
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Cartella che contiene i file .env del progetto
 ENV_DIR = BASE_DIR / '.a0proj'
 
 # ---------------------------------------------------------------------------
 # AC-02: Configurazione tramite variabili d'ambiente (variables.env + secrets.env)
 # ---------------------------------------------------------------------------
-# Carica variables.env per le variabili operative
 _variables_env_path = ENV_DIR / 'variables.env'
 _secrets_env_path = ENV_DIR / 'secrets.env'
 
-# Usa variables.env come sorgente principale; fallback ai valori di default
 if _variables_env_path.exists():
     _config = Config(RepositoryEnv(str(_variables_env_path)))
 else:
     from decouple import config as _config  # type: ignore  # noqa: F811
 
-# Secrets sovrascrivono le variabili se presenti
 if _secrets_env_path.exists():
     _secrets_config = Config(RepositoryEnv(str(_secrets_env_path)))
 else:
@@ -59,21 +54,16 @@ def _get(key, default=None, cast=None):
 # ---------------------------------------------------------------------------
 # SICUREZZA
 # ---------------------------------------------------------------------------
-# AC-02: SECRET_KEY letta da secrets.env
 SECRET_KEY = _get(
     'DJANGO_SECRET_KEY',
     default='django-insecure-change-me-in-production'
 )
 
-# AC-02: DEBUG letto da variables.env
 DEBUG = _get('DJANGO_DEBUG', default='True') in ('True', 'true', '1', True)
 
-# AC-02: ALLOWED_HOSTS letto da variables.env
 _allowed_hosts_raw = _get('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1')
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()]
 
-# AC-02: FIELD_ENCRYPTION_KEY for encrypted model fields (NFR4)
-# Generate a key for development if not set in environment.
-# In production, this must be set in secrets.env.
 import base64
 import os
 _default_encryption_key = base64.urlsafe_b64encode(os.urandom(32)).decode()
@@ -97,7 +87,6 @@ INSTALLED_APPS = [
     'apps.questionnaire',
     'apps.accounts',
 ]
-# AC-01: Custom User Model
 AUTH_USER_MODEL = 'accounts.UserCustom'
 
 MIDDLEWARE = [
@@ -169,6 +158,13 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 
 # ---------------------------------------------------------------------------
+# MEDIA FILES (Story 2.1: Upload documenti)
+# ---------------------------------------------------------------------------
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# ---------------------------------------------------------------------------
 # DEFAULT AUTO FIELD
 # ---------------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -176,8 +172,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ---------------------------------------------------------------------------
 # AC-03: Configurazione LOGGING multi-livello
-# DEBUG / INFO / WARNING / ERROR / CRITICAL
-# Handler: console + file
 # ---------------------------------------------------------------------------
 LOG_DIR = BASE_DIR / 'logs'
 LOG_DIR.mkdir(exist_ok=True)
@@ -186,10 +180,9 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
 
-    # Formatter dettagliato per file, compatto per console
     'formatters': {
         'verbose': {
-            'format': '[{levelname}] {asctime} {name} {module}:{lineno} — {message}',
+            'format': '[{levelname}] {asctime} {name} {module}:{lineno} -- {message}',
             'style': '{',
             'datefmt': '%Y-%m-%d %H:%M:%S',
         },
@@ -199,58 +192,49 @@ LOGGING = {
         },
     },
 
-    # Filtri
     'filters': {
         'require_debug_true': {
             '()': 'django.utils.log.RequireDebugTrue',
         },
     },
 
-    # Handler: console (DEBUG+) e file separati per INFO e ERROR
     'handlers': {
-        # AC-03: console — tutti i livelli in sviluppo
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
-        # AC-03: file generale — INFO e superiori
         'file_info': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': str(LOG_DIR / 'ai_tender.log'),
-            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'maxBytes': 10 * 1024 * 1024,
             'backupCount': 5,
             'formatter': 'verbose',
             'encoding': 'utf-8',
         },
-        # AC-03: file errori — WARNING e superiori
         'file_error': {
             'level': 'WARNING',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': str(LOG_DIR / 'errors.log'),
-            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'maxBytes': 10 * 1024 * 1024,
             'backupCount': 5,
             'formatter': 'verbose',
             'encoding': 'utf-8',
         },
     },
 
-    # Logger radice e specifici per ogni app
     'loggers': {
-        # AC-03: logger Django — WARNING su console, INFO su file
         'django': {
             'handlers': ['console', 'file_info', 'file_error'],
             'level': 'INFO',
             'propagate': False,
         },
-        # AC-03: logger specifico ai_tender — DEBUG completo
         'ai_tender': {
             'handlers': ['console', 'file_info', 'file_error'],
             'level': 'DEBUG',
             'propagate': False,
         },
-        # AC-03: logger per ogni app modulare
         'apps.pipeline': {
             'handlers': ['console', 'file_info', 'file_error'],
             'level': 'DEBUG',
@@ -283,7 +267,6 @@ LOGGING = {
         },
     },
 
-    # Root logger — catch-all
     'root': {
         'handlers': ['console', 'file_error'],
         'level': 'WARNING',
@@ -295,9 +278,9 @@ LOGGING = {
 # SESSION CONFIGURATION (Story 1.3 - Task 3)
 # NFR7: Session timeout 30 minuti
 # ---------------------------------------------------------------------------
-SESSION_COOKIE_AGE = 1800  # 30 minuti in secondi
+SESSION_COOKIE_AGE = 1800
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_SECURE = False  # True in produzione con HTTPS
+SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
